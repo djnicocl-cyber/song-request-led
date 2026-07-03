@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Pide tu cancion 🎵</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Segoe UI', sans-serif; padding: 20px;
+    }
+    .card {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 24px;
+      padding: 36px 28px;
+      width: 100%; max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .logo { text-align: center; margin-bottom: 28px; }
+    .logo .music-icon { font-size: 56px; }
+    .logo h1 { color: #fff; font-size: 22px; font-weight: 700; margin-top: 8px; }
+    .logo p { color: rgba(255,255,255,0.5); font-size: 13px; margin-top: 4px; }
+
+    .form-group { margin-bottom: 18px; }
+    label { display: block; color: rgba(255,255,255,0.7); font-size: 13px; margin-bottom: 6px; font-weight: 500; }
+    input, textarea {
+      width: 100%; padding: 14px 16px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px; color: #fff; font-size: 15px;
+      outline: none; transition: all 0.2s;
+    }
+    input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.3); }
+    input:focus, textarea:focus {
+      border-color: rgba(130,80,255,0.7);
+      background: rgba(255,255,255,0.12);
+      box-shadow: 0 0 0 3px rgba(130,80,255,0.2);
+    }
+    .instagram-wrap { position: relative; }
+    .instagram-wrap .at {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: rgba(255,255,255,0.4); font-size: 15px;
+    }
+    .instagram-wrap input { padding-left: 28px; }
+
+    textarea { resize: none; height: 90px; }
+
+    .btn-send {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
+      border: none; border-radius: 14px; color: #fff;
+      font-size: 17px; font-weight: 700; cursor: pointer;
+      transition: all 0.2s; margin-top: 6px; letter-spacing: 0.5px;
+    }
+    .btn-send:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(130,80,255,0.4); }
+    .btn-send:active { transform: translateY(0); }
+    .btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .success {
+      display: none; text-align: center; padding: 24px;
+      color: #fff;
+    }
+    .success .check { font-size: 60px; }
+    .success h2 { font-size: 20px; margin-top: 12px; }
+    .success p { color: rgba(255,255,255,0.6); margin-top: 8px; font-size: 14px; }
+    .btn-again {
+      margin-top: 20px; padding: 12px 28px;
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px; color: #fff; cursor: pointer; font-size: 15px;
+    }
+
+    .powered {
+      text-align: center; color: rgba(255,255,255,0.25);
+      font-size: 11px; margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <div id="formView">
+    <div class="logo">
+      <div class="music-icon">🎵</div>
+      <h1>Pide tu cancion</h1>
+      <p>Tu solicitud aparecera en la pantalla LED</p>
+    </div>
+
+    <form id="requestForm">
+      <div class="form-group">
+        <label>Tu usuario de Instagram (opcional)</label>
+        <div class="instagram-wrap">
+          <span class="at">@</span>
+          <input type="text" id="igUser" placeholder="tu_usuario" maxlength="30" autocomplete="off" autocapitalize="none">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>🎶 Cancion que pides *</label>
+        <input type="text" id="song" placeholder="Nombre de la cancion" maxlength="80" required>
+      </div>
+      <div class="form-group">
+        <label>Artista (opcional)</label>
+        <input type="text" id="artist" placeholder="Nombre del artista" maxlength="60">
+      </div>
+      <div class="form-group">
+        <label>Mensaje para el DJ (opcional)</label>
+        <textarea id="message" placeholder="Algo que quieras decirle al DJ..."></textarea>
+      </div>
+      <button type="submit" class="btn-send" id="btnSend">🎤 Enviar peticion</button>
+    </form>
+  </div>
+
+  <div id="successView" class="success">
+    <div class="check">✅</div>
+    <h2>¡Peticion enviada!</h2>
+    <p>El DJ recibio tu solicitud.<br>Atencion a la pantalla 🎧</p>
+    <button class="btn-again" onclick="resetForm()">Pedir otra cancion</button>
+  </div>
+
+  <div class="powered">Powered by Song Request LED</div>
+</div>
+
+<script>
+  const BACKEND_URL = 'BACKEND_PLACEHOLDER';
+
+  document.getElementById('requestForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnSend');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    const data = {
+      igUser: document.getElementById('igUser').value.trim().replace('@',''),
+      song: document.getElementById('song').value.trim(),
+      artist: document.getElementById('artist').value.trim(),
+      message: document.getElementById('message').value.trim(),
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      const res = await fetch(BACKEND_URL + '/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        document.getElementById('formView').style.display = 'none';
+        document.getElementById('successView').style.display = 'block';
+      } else {
+        throw new Error('Error del servidor');
+      }
+    } catch (err) {
+      alert('Error al enviar. Intenta de nuevo.');
+      btn.disabled = false;
+      btn.textContent = 'Enviar peticion';
+    }
+  });
+
+  function resetForm() {
+    document.getElementById('requestForm').reset();
+    document.getElementById('formView').style.display = 'block';
+    document.getElementById('successView').style.display = 'none';
+    document.getElementById('btnSend').disabled = false;
+    document.getElementById('btnSend').textContent = 'Enviar peticion';
+  }
+</script>
+</body>
+</html>
