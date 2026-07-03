@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pantalla LED</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      width: 100vw; height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    .screen {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+
+    /* Fondo animado de particulas */
+    .bg-glow {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, rgba(120,40,200,0.15) 0%, transparent 70%);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+    @keyframes glowPulse {
+      0%,100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+
+    .content {
+      position: relative; z-index: 1;
+      text-align: center; padding: 40px;
+      animation: slideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(30px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .label {
+      font-size: clamp(12px, 2vw, 18px);
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase; letter-spacing: 3px;
+      margin-bottom: 24px;
+    }
+
+    .song-title {
+      font-size: clamp(48px, 10vw, 120px);
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      text-shadow:
+        0 0 40px rgba(168,85,247,0.9),
+        0 0 80px rgba(168,85,247,0.5),
+        0 0 120px rgba(168,85,247,0.3);
+      animation: textGlow 2s ease-in-out infinite;
+    }
+    @keyframes textGlow {
+      0%,100% { text-shadow: 0 0 40px rgba(168,85,247,0.9), 0 0 80px rgba(168,85,247,0.5); }
+      50% { text-shadow: 0 0 60px rgba(168,85,247,1), 0 0 100px rgba(168,85,247,0.7), 0 0 140px rgba(168,85,247,0.4); }
+    }
+
+    .artist {
+      font-size: clamp(20px, 4vw, 48px);
+      color: rgba(255,255,255,0.55);
+      margin-top: 12px; font-weight: 400;
+    }
+
+    .divider {
+      width: 80px; height: 3px;
+      background: linear-gradient(90deg, #a855f7, #ec4899);
+      border-radius: 2px; margin: 28px auto;
+    }
+
+    .user-section {
+      display: flex; align-items: center; justify-content: center; gap: 14px;
+      margin-top: 8px;
+    }
+    .ig-badge {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 100px;
+      padding: 8px 20px 8px 10px;
+    }
+    .ig-logo {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .ig-username {
+      font-size: clamp(18px, 3vw, 32px);
+      font-weight: 700; color: rgba(255,255,255,0.85);
+    }
+
+    .message {
+      margin-top: 24px;
+      font-size: clamp(14px, 2.5vw, 22px);
+      color: rgba(255,255,255,0.35);
+      font-style: italic;
+      max-width: 600px; margin-left: auto; margin-right: auto;
+    }
+
+    /* Idle screen */
+    .idle { text-align: center; color: rgba(255,255,255,0.1); }
+    .idle .big { font-size: 80px; margin-bottom: 16px; }
+    .idle p { font-size: 20px; }
+
+    /* Corner info */
+    .corner {
+      position: absolute; bottom: 24px; right: 28px;
+      font-size: 13px; color: rgba(255,255,255,0.15);
+      text-align: right;
+    }
+
+    /* Scan for next button */
+    .next-btn {
+      position: absolute; top: 20px; right: 20px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px; color: rgba(255,255,255,0.4); padding: 8px 14px;
+      cursor: pointer; font-size: 13px; transition: all 0.2s;
+    }
+    .next-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+  </style>
+</head>
+<body>
+<div class="screen">
+  <div class="bg-glow"></div>
+
+  <div id="mainContent"></div>
+
+  <div class="corner" id="cornerInfo"></div>
+  <button class="next-btn" onclick="window.close()">✕ Cerrar</button>
+</div>
+
+<script>
+const BACKEND_URL = 'BACKEND_PLACEHOLDER';
+
+function getParams() {
+  const p = new URLSearchParams(window.location.search);
+  return {
+    song: p.get('song') || '',
+    artist: p.get('artist') || '',
+    user: p.get('user') || '',
+    msg: p.get('msg') || ''
+  };
+}
+
+function esc(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function render(data) {
+  const mc = document.getElementById('mainContent');
+  if (!data || !data.song) {
+    mc.innerHTML = '<div class="idle"><div class="big">🎵</div><p>Esperando la proxima cancion...</p></div>';
+    document.getElementById('cornerInfo').textContent = '';
+    return;
+  }
+  mc.innerHTML = `
+    <div class="content">
+      <div class="label">🎵 Cancion solicitada</div>
+      <div class="song-title">${esc(data.song)}</div>
+      ${data.artist ? '<div class="artist">— ' + esc(data.artist) + '</div>' : ''}
+      ${data.user ? '<div class="divider"></div><div class="user-section"><div class="ig-badge"><div class="ig-logo">📸</div><div class="ig-username">@' + esc(data.user) + '</div></div></div>' : ''}
+      ${data.msg ? '<div class="message">"' + esc(data.msg) + '"</div>' : ''}
+    </div>
+  `;
+  document.getElementById('cornerInfo').textContent = new Date().toLocaleTimeString();
+}
+
+// Inicializar con parametros de URL
+const params = getParams();
+if (params.song) {
+  render(params);
+} else {
+  render(null);
+  // Polling por display actual del backend
+  async function pollDisplay() {
+    try {
+      const res = await fetch(BACKEND_URL + '/display');
+      const data = await res.json();
+      render(data);
+    } catch(e) {}
+  }
+  pollDisplay();
+  setInterval(pollDisplay, 1000);
+
+  // SSE para actualizaciones en tiempo real
+  try {
+    const es = new EventSource(BACKEND_URL + '/events');
+    es.onmessage = (e) => { pollDisplay(); };
+  } catch(e) {}
+}
+
+// Entrar en fullscreen automaticamente
+document.body.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+});
+setTimeout(() => {
+  document.documentElement.requestFullscreen().catch(() => {});
+}, 500);
+</script>
+</body>
+</html>
